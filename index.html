@@ -389,6 +389,7 @@
     </style>
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -608,10 +609,14 @@
                     💡 الطلبية تُحسب تلقائياً من معدل الاحتياج الشهري. الإجمالي يُحسب تلقائياً (الكمية × السعر). يمكنك تعديل الكمية المطلوبة يدوياً.
                 </div>
 
-                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="stat-box">
                         <div class="number" id="statOrderItems">0</div>
                         <div class="label">عدد الأصناف المطلوبة</div>
+                    </div>
+                    <div class="stat-box" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);">
+                        <div class="number" id="statOrderReceived">0</div>
+                        <div class="label">إجمالي الوارد</div>
                     </div>
                     <div class="stat-box">
                         <div class="number" id="statOrderTotal">0</div>
@@ -767,7 +772,7 @@
     async function saveToFirebase() {
         try {
             await setDoc(doc(db, "lab", "data"), {
-                inventory, consumption, debts,
+                inventory, consumption, debts, receivedMap,
                 updatedAt: new Date().toISOString()
             });
             updateSyncStatus(true, "☁️ متزامن مع السحابة");
@@ -775,7 +780,7 @@
             console.error("Firebase save error:", e);
             updateSyncStatus(false, "⚠️ غير متصل - محفوظ محلياً");
             // Fallback to localStorage
-            localStorage.setItem('lab_inv_backup', JSON.stringify({inventory, consumption, debts}));
+            localStorage.setItem('lab_inv_backup', JSON.stringify({inventory, consumption, debts, receivedMap}));
         }
     }
 
@@ -788,6 +793,7 @@
                 inventory = data.inventory || [];
                 consumption = data.consumption || [];
                 debts = data.debts || [];
+                receivedMap = data.receivedMap || {};
                 updateSyncStatus(true, "☁️ متصل بالسحابة");
             } else {
                 // Try localStorage backup
@@ -797,6 +803,7 @@
                     inventory = data.inventory || [];
                     consumption = data.consumption || [];
                     debts = data.debts || [];
+                    receivedMap = data.receivedMap || {};
                     await saveToFirebase();
                 }
             }
@@ -1014,6 +1021,8 @@
                     qty: qty,
                     cost: cost
                 });
+                // Deduct daily consumption from inventory
+                item.qty = Math.max(0, item.qty - qty);
             }
         });
 
@@ -1194,6 +1203,8 @@
 
     // ========== ORDERS ==========
     let orderItems = [];
+    // receivedMap: itemId -> receivedQty (persisted)
+    let receivedMap = {};
 
     function renderOrders() {
         const container = document.getElementById('ordersTable');
@@ -1205,22 +1216,25 @@
                     <div>لا يوجد بيانات للطلب</div>
                     <div style="font-size:13px; margin-top:5px;">أكمل بيانات الاستهلاك في الشاشة السابقة أولاً</div>
                 </div>`;
-            updateOrderStats(0, 0);
+            updateOrderStats(0, 0, 0);
             return;
         }
 
         orderItems = [];
         let totalValue = 0;
+        let totalReceived = 0;
 
         consumption.forEach(c => {
             const item = inventory.find(i => i.id === c.itemId);
             if (!item) return;
             const monthlyNeed = c.daily * 30;
             const orderQty = Math.max(0, Math.ceil(monthlyNeed - item.qty));
-            if (orderQty > 0) {
+            const receivedQty = receivedMap[item.id] || 0;
+            if (orderQty > 0 || receivedQty > 0) {
                 const value = orderQty * item.price;
                 totalValue += value;
-                orderItems.push({ ...c, item, orderQty, value, monthlyNeed });
+                totalReceived += receivedQty;
+                orderItems.push({ ...c, item, orderQty, value, monthlyNeed, receivedQty });
             }
         });
 
@@ -1231,7 +1245,7 @@
                     <div>المخزون كافٍ لجميع الاحتياجات</div>
                     <div style="font-size:13px; margin-top:5px;">لا تحتاج لطلبيات حالياً</div>
                 </div>`;
-            updateOrderStats(0, 0);
+            updateOrderStats(0, 0, 0);
             return;
         }
 
@@ -1242,6 +1256,7 @@
                 <th>الاحتياج الشهري</th>
                 <th>المخزون</th>
                 <th>الكمية المطلوبة</th>
+                <th>الكمية الواردة</th>
                 <th>سعر الوحدة</th>
                 <th>الإجمالي</th>
                 <th>إجراءات</th>
@@ -1258,6 +1273,7 @@
                 <td>${o.monthlyNeed.toFixed(2)} ${o.item.unit}</td>
                 <td>${o.item.qty} ${o.item.unit}</td>
                 <td><input type="number" value="${o.orderQty}" min="0" onchange="updateOrderQty(${idx}, this.value)" style="width:80px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:center;"></td>
+                <td><input type="number" value="${o.receivedQty}" min="0" onchange="updateReceivedQty(${o.item.id}, this.value)" style="width:80px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:center;"></td>
                 <td>${o.item.price} ج.م</td>
                 <td id="orderVal_${idx}">${o.value.toFixed(2)} ج.م</td>
                 <td><button class="btn-delete" onclick="deleteOrderItem(${idx})">🗑️</button></td>
@@ -1266,16 +1282,18 @@
 
         html += `<tr style="background:#f8f9fa; font-weight:700;">
             <td colspan="5" style="text-align:left;">إجمالي الطلبية:</td>
-            <td>${totalValue.toFixed(2)} ج.م</td>
+            <td style="color:#4caf50;">${totalReceived.toFixed(2)} واردة</td>
+            <td colspan="2">${totalValue.toFixed(2)} ج.م</td>
         </tr></tbody></table>`;
 
         container.innerHTML = html;
-        updateOrderStats(orderItems.length, totalValue);
+        updateOrderStats(orderItems.length, totalValue, totalReceived);
     }
 
-    function updateOrderStats(items, total) {
+    function updateOrderStats(items, total, received) {
         document.getElementById('statOrderItems').textContent = items;
         document.getElementById('statOrderTotal').textContent = total.toFixed(2) + ' ج.م';
+        document.getElementById('statOrderReceived').textContent = (received || 0).toFixed(2);
     }
 
     window.updateOrderQty = function(idx, newQty) {
@@ -1294,6 +1312,26 @@
             }
         });
         document.getElementById('statOrderTotal').textContent = total.toFixed(2) + ' ج.م';
+    };
+
+    window.updateReceivedQty = async function(itemId, newQty) {
+        const oldQty = receivedMap[itemId] || 0;
+        const newQtyVal = parseFloat(newQty) || 0;
+        const diff = newQtyVal - oldQty;
+
+        receivedMap[itemId] = newQtyVal;
+
+        // Add difference to inventory
+        if (diff !== 0) {
+            const item = inventory.find(i => i.id === itemId);
+            if (item) {
+                item.qty = Math.max(0, item.qty + diff);
+                await saveToFirebase();
+            }
+        }
+
+        await saveToFirebase();
+        renderAll();
     };
 
     window.deleteOrderItem = function(idx) {
