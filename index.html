@@ -370,13 +370,59 @@
         .sync-status.error { color: #f44336; }
 
 
-        /* Flash/Chemia row colors */
+        /* Flash/Chemia/Krots row colors */
         .row-flash { background: linear-gradient(90deg, #fff3e0 0%, #ffe0b2 100%) !important; }
         .row-flash td { border-left: 4px solid #ff9800 !important; }
         .row-chemia { background: linear-gradient(90deg, #e3f2fd 0%, #bbdefb 100%) !important; }
         .row-chemia td { border-left: 4px solid #2196f3 !important; }
+        .row-krots { background: linear-gradient(90deg, #f3e5f5 0%, #e1bee7 100%) !important; }
+        .row-krots td { border-left: 4px solid #9c27b0 !important; }
         .badge-flash { background: #ff9800; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
         .badge-chemia { background: #2196f3; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .badge-krots { background: #9c27b0; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 16px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .filter-bar input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e8e8e8;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { border-color: #667eea; }
+        .filter-btn.active { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border-color: transparent;
+        }
+        .filter-btn.all.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .filter-btn.flash.active { background: #ff9800; }
+        .filter-btn.chemia.active { background: #2196f3; }
+        .filter-btn.krots.active { background: #9c27b0; }
 
         @media (max-width: 768px) {
             .main-content { padding: 0 15px 20px; }
@@ -387,7 +433,6 @@
             .data-table th, .data-table td { padding: 8px 6px; }
         }
     </style>
-<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 </head>
@@ -454,6 +499,7 @@
                         <select id="invType">
                             <option value="chemia">⚗️ كيميا</option>
                             <option value="flash">⚡ فلاش</option>
+                            <option value="krots">🃏 كروت</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -483,6 +529,7 @@
                             <option value="علبه معدن">علبه معدن</option>
                             <option value="علبه ورق">علبه ورق</option>
                             <option value="علبه كرتون">علبه كرتون</option>
+                            <option value="كارت">كارت</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -496,6 +543,13 @@
                     <button class="btn-add" onclick="addInventory()">➕ إضافة</button>
                 </div>
 
+                <div class="filter-bar">
+                    <input type="text" id="invSearch" placeholder="🔍 ابحث في المخزون..." onkeyup="filterInventory()">
+                    <button class="filter-btn all active" onclick="filterInvByType('all', this)">الكل</button>
+                    <button class="filter-btn flash" onclick="filterInvByType('flash', this)">⚡ فلاش</button>
+                    <button class="filter-btn chemia" onclick="filterInvByType('chemia', this)">⚗️ كيميا</button>
+                    <button class="filter-btn krots" onclick="filterInvByType('krots', this)">🃏 كروت</button>
+                </div>
                 <div id="inventoryTable"></div>
             </div>
         </div>
@@ -549,6 +603,13 @@
                     💡 اضغط "حفظ استهلاك اليوم" في نهاية كل يوم. الاستهلاك اليومي الحالي يتحول لـ "يوم سابق" ويتفضى ليوم جديد. عدل الاستهلاك اليومي مباشرة في الجدول.
                 </div>
 
+                <div class="filter-bar">
+                    <input type="text" id="consSearch" placeholder="🔍 ابحث في الاستهلاك..." onkeyup="filterConsumption()">
+                    <button class="filter-btn all active" onclick="filterConsByType('all', this)">الكل</button>
+                    <button class="filter-btn flash" onclick="filterConsByType('flash', this)">⚡ فلاش</button>
+                    <button class="filter-btn chemia" onclick="filterConsByType('chemia', this)">⚗️ كيميا</button>
+                    <button class="filter-btn krots" onclick="filterConsByType('krots', this)">🃏 كروت</button>
+                </div>
                 <div id="consumptionTable"></div>
             </div>
         </div>
@@ -624,6 +685,13 @@
                     </div>
                 </div>
 
+                <div class="filter-bar">
+                    <input type="text" id="orderSearch" placeholder="🔍 ابحث في الطلبيات..." onkeyup="filterOrders()">
+                    <button class="filter-btn all active" onclick="filterOrderByType('all', this)">الكل</button>
+                    <button class="filter-btn flash" onclick="filterOrderByType('flash', this)">⚡ فلاش</button>
+                    <button class="filter-btn chemia" onclick="filterOrderByType('chemia', this)">⚗️ كيميا</button>
+                    <button class="filter-btn krots" onclick="filterOrderByType('krots', this)">🃏 كروت</button>
+                </div>
                 <div id="ordersTable"></div>
             </div>
         </div>
@@ -910,14 +978,27 @@
         renderAll();
     };
 
+    window.currentInvFilter = 'all';
+    window.currentInvSearch = '';
+
     function renderInventory() {
         const container = document.getElementById('inventoryTable');
-        if (inventory.length === 0) {
+
+        let filtered = inventory;
+        if (window.currentInvFilter !== 'all') {
+            filtered = inventory.filter(item => item.type === window.currentInvFilter);
+        }
+        if (window.currentInvSearch) {
+            const s = window.currentInvSearch.toLowerCase();
+            filtered = filtered.filter(item => item.name.toLowerCase().includes(s));
+        }
+
+        if (filtered.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">📭</div>
-                    <div>لا يوجد مستلزمات مسجلة</div>
-                    <div style="font-size:13px; margin-top:5px;">أضف المستلزمات أولاً من الأعلى</div>
+                    <div>لا يوجد نتائج</div>
+                    <div style="font-size:13px; margin-top:5px;">جرب تغيير الفلتر أو البحث</div>
                 </div>`;
             return;
         }
@@ -934,18 +1015,30 @@
                 <th>إجراءات</th>
             </tr></thead><tbody>`;
 
-        inventory.forEach((item, i) => {
+        filtered.forEach((item, i) => {
             const total = (item.price * item.qty).toFixed(2);
             const typeSelect = `<select onchange="updateInvType(${item.id}, this.value)" style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; cursor:pointer;">
                 <option value="chemia" ${item.type === 'chemia' ? 'selected' : ''}>⚗️ كيميا</option>
                 <option value="flash" ${item.type === 'flash' ? 'selected' : ''}>⚡ فلاش</option>
+                <option value="krots" ${item.type === 'krots' ? 'selected' : ''}>🃏 كروت</option>
             </select>`;
-            const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'chemia' ? 'row-chemia' : '');
+            const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'krots' ? 'row-krots' : (item.type === 'chemia' ? 'row-chemia' : ''));
             html += `<tr class="${rowClass}">
                 <td>${i + 1}</td>
                 <td>${typeSelect}</td>
                 <td>${item.name}</td>
-                <td>${item.unit}</td>
+                <td><select onchange="updateInvUnit(${item.id}, this.value)" style="padding:4px 8px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; cursor:pointer;">
+                    <option value="لتر" ${item.unit === 'لتر' ? 'selected' : ''}>لتر</option>
+                    <option value="كجم" ${item.unit === 'كجم' ? 'selected' : ''}>كجم</option>
+                    <option value="جرام" ${item.unit === 'جرام' ? 'selected' : ''}>جرام</option>
+                    <option value="مل" ${item.unit === 'مل' ? 'selected' : ''}>مل</option>
+                    <option value="قطعه" ${item.unit === 'قطعه' ? 'selected' : ''}>قطعه</option>
+                    <option value="علبه" ${item.unit === 'علبه' ? 'selected' : ''}>علبه</option>
+                    <option value="علبه كرتون" ${item.unit === 'علبه كرتون' ? 'selected' : ''}>علبه كرتون</option>
+                    <option value="كارت" ${item.unit === 'كارت' ? 'selected' : ''}>كارت</option>
+                    <option value="Kit (2*50T)" ${item.unit === 'Kit (2*50T)' ? 'selected' : ''}>Kit (2*50T)</option>
+                    <option value="Test" ${item.unit === 'Test' ? 'selected' : ''}>Test</option>
+                </select></td>
                 <td><input type="number" value="${item.price}" onchange="updateInvPrice(${item.id}, this.value)" step="0.01"></td>
                 <td><input type="number" value="${item.qty}" onchange="updateInvQty(${item.id}, this.value)"></td>
                 <td>${total} ج.م</td>
@@ -956,6 +1049,21 @@
         html += '</tbody></table>';
         container.innerHTML = html;
     }
+
+    window.filterInventory = function() {
+        window.currentInvSearch = document.getElementById('invSearch').value;
+        renderInventory();
+    };
+    window.filterInvByType = function(type, btn) {
+        window.currentInvFilter = type;
+        document.querySelectorAll('#inventoryTab .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Debug: show all item types
+        const types = {};
+        inventory.forEach(i => { types[i.type || 'undefined'] = (types[i.type || 'undefined'] || 0) + 1; });
+        console.log('Filter by type:', type, 'Type counts:', types);
+        renderInventory();
+    };
 
     window.updateInvPrice = async function(id, val) {
         const item = inventory.find(i => i.id === id);
@@ -968,6 +1076,10 @@
     window.updateInvType = async function(id, val) {
         const item = inventory.find(i => i.id === id);
         if (item) { item.type = val; await saveToFirebase(); renderAll(); }
+    };
+    window.updateInvUnit = async function(id, val) {
+        const item = inventory.find(i => i.id === id);
+        if (item) { item.unit = val; await saveToFirebase(); renderAll(); }
     };
     window.deleteInv = async function(id) {
         if (!confirm('هل أنت متأكد من الحذف؟')) return;
@@ -985,6 +1097,10 @@
     window.updateConsumption = async function(itemId, newDaily) {
         const daily = parseFloat(newDaily) || 0;
         const existing = consumption.find(c => c.itemId === itemId);
+        const item = inventory.find(i => i.id === itemId);
+
+        const oldDaily = existing ? (existing.daily || 0) : 0;
+        const diff = daily - oldDaily;
 
         if (existing) {
             existing.daily = daily;
@@ -996,6 +1112,12 @@
                 yesterday: 0 
             });
         }
+
+        // Auto deduct/add to inventory based on difference
+        if (item && diff !== 0) {
+            item.qty = Math.max(0, item.qty - diff);
+        }
+
         await saveToFirebase();
         renderAll();
     };
@@ -1021,8 +1143,6 @@
                     qty: qty,
                     cost: cost
                 });
-                // Deduct daily consumption from inventory
-                item.qty = Math.max(0, item.qty - qty);
             }
         });
 
@@ -1070,8 +1190,20 @@
         alert('✅ تم حفظ استهلاك اليوم وبدء يوم جديد!');
     };
 
+    window.currentConsFilter = 'all';
+    window.currentConsSearch = '';
+
     function renderConsumption() {
         const container = document.getElementById('consumptionTable');
+
+        let filtered = inventory;
+        if (window.currentConsFilter !== 'all') {
+            filtered = inventory.filter(item => item.type === window.currentConsFilter);
+        }
+        if (window.currentConsSearch) {
+            const s = window.currentConsSearch.toLowerCase();
+            filtered = filtered.filter(item => item.name.toLowerCase().includes(s));
+        }
 
         let totalItems = 0, totalDaily = 0, totalCost = 0;
         let yesterdayHtml = `<table class="data-table">
@@ -1109,7 +1241,7 @@
                 <th>إجراءات</th>
             </tr></thead><tbody>`;
 
-        inventory.forEach(item => {
+        filtered.forEach(item => {
             const c = consumption.find(con => con.itemId === item.id);
             const yesterday = c ? (c.yesterday || 0) : 0;
             const daily = c ? c.daily : 0;
@@ -1124,8 +1256,8 @@
 
             const typeBadge = item.type === 'flash' 
                 ? '<span class="badge-flash">⚡ فلاش</span>' 
-                : (item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>');
-            const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'chemia' ? 'row-chemia' : '');
+                : (item.type === 'krots' ? '<span class="badge-krots">🃏 كروت</span>' : (item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>'));
+            const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'krots' ? 'row-krots' : (item.type === 'chemia' ? 'row-chemia' : ''));
             html += `<tr class="${rowClass}">
                 <td>${item.name}</td>
                 <td>${typeBadge}</td>
@@ -1143,8 +1275,8 @@
                 const yestCost = yesterday * item.price;
                 const typeBadge = item.type === 'flash' 
                     ? '<span class="badge-flash">⚡ فلاش</span>' 
-                    : (item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>');
-                const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'chemia' ? 'row-chemia' : '');
+                    : (item.type === 'krots' ? '<span class="badge-krots">🃏 كروت</span>' : (item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>'));
+                const rowClass = item.type === 'flash' ? 'row-flash' : (item.type === 'krots' ? 'row-krots' : (item.type === 'chemia' ? 'row-chemia' : ''));
                 yesterdayHtml += `<tr class="${rowClass}">
                     <td>${item.name}</td>
                     <td>${typeBadge}</td>
@@ -1169,6 +1301,17 @@
 
         updateConsumptionStats(totalItems, totalDaily, totalDaily * 30, totalCost);
     }
+
+    window.filterConsumption = function() {
+        window.currentConsSearch = document.getElementById('consSearch').value;
+        renderConsumption();
+    };
+    window.filterConsByType = function(type, btn) {
+        window.currentConsFilter = type;
+        document.querySelectorAll('#consumptionTab .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderConsumption();
+    };
 
     function updateConsumptionStats(items, daily, monthly, cost) {
         const yesterdayTotal = consumption.reduce((sum, c) => sum + (c.yesterday || 0), 0);
@@ -1196,6 +1339,12 @@
     };
 
     window.deleteCons = async function(itemId) {
+        const c = consumption.find(con => con.itemId === itemId);
+        const item = inventory.find(i => i.id === itemId);
+        // Restore deducted amount to inventory
+        if (c && item && c.daily > 0) {
+            item.qty += c.daily;
+        }
         consumption = consumption.filter(c => c.itemId !== itemId);
         await saveToFirebase();
         renderAll();
@@ -1205,6 +1354,9 @@
     let orderItems = [];
     // receivedMap: itemId -> receivedQty (persisted)
     let receivedMap = {};
+
+    window.currentOrderFilter = 'all';
+    window.currentOrderSearch = '';
 
     function renderOrders() {
         const container = document.getElementById('ordersTable');
@@ -1262,11 +1414,21 @@
                 <th>إجراءات</th>
             </tr></thead><tbody>`;
 
-        orderItems.forEach((o, idx) => {
+        // Apply filters
+        let filteredOrders = orderItems;
+        if (window.currentOrderFilter !== 'all') {
+            filteredOrders = orderItems.filter(o => o.item.type === window.currentOrderFilter);
+        }
+        if (window.currentOrderSearch) {
+            const s = window.currentOrderSearch.toLowerCase();
+            filteredOrders = filteredOrders.filter(o => o.item.name.toLowerCase().includes(s));
+        }
+
+        filteredOrders.forEach((o, idx) => {
             const typeBadge = o.item.type === 'flash' 
                 ? '<span class="badge-flash">⚡ فلاش</span>' 
-                : (o.item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>');
-            const rowClass = o.item.type === 'flash' ? 'row-flash' : (o.item.type === 'chemia' ? 'row-chemia' : '');
+                : (o.item.type === 'krots' ? '<span class="badge-krots">🃏 كروت</span>' : (o.item.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>'));
+            const rowClass = o.item.type === 'flash' ? 'row-flash' : (o.item.type === 'krots' ? 'row-krots' : (o.item.type === 'chemia' ? 'row-chemia' : ''));
             html += `<tr class="${rowClass}">
                 <td>${o.item.name}</td>
                 <td>${typeBadge}</td>
@@ -1290,6 +1452,17 @@
         updateOrderStats(orderItems.length, totalValue, totalReceived);
     }
 
+    window.filterOrders = function() {
+        window.currentOrderSearch = document.getElementById('orderSearch').value;
+        renderOrders();
+    };
+    window.filterOrderByType = function(type, btn) {
+        window.currentOrderFilter = type;
+        document.querySelectorAll('#ordersTab .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderOrders();
+    };
+
     function updateOrderStats(items, total, received) {
         document.getElementById('statOrderItems').textContent = items;
         document.getElementById('statOrderTotal').textContent = total.toFixed(2) + ' ج.م';
@@ -1302,7 +1475,6 @@
         const qty = parseInt(newQty) || 0;
         const newValue = qty * item.item.price;
         document.getElementById('orderVal_' + idx).textContent = newValue.toFixed(2) + ' ج.م';
-        // Recalculate total
         let total = 0;
         orderItems.forEach((o, i) => {
             if (i === idx) {
@@ -1321,7 +1493,6 @@
 
         receivedMap[itemId] = newQtyVal;
 
-        // Add difference to inventory
         if (diff !== 0) {
             const item = inventory.find(i => i.id === itemId);
             if (item) {
@@ -1616,8 +1787,8 @@
                 const invItem = inventory.find(inv => inv.name === item.name);
                 const typeBadge = invItem && invItem.type === 'flash' 
                     ? '<span class="badge-flash">⚡ فلاش</span>' 
-                    : (invItem && invItem.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>');
-                const rowClass = invItem && invItem.type === 'flash' ? 'row-flash' : (invItem && invItem.type === 'chemia' ? 'row-chemia' : '');
+                    : (invItem && invItem.type === 'krots' ? '<span class="badge-krots">🃏 كروت</span>' : (invItem && invItem.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>'));
+                const rowClass = invItem && invItem.type === 'flash' ? 'row-flash' : (invItem && invItem.type === 'krots' ? 'row-krots' : (invItem && invItem.type === 'chemia' ? 'row-chemia' : ''));
                 html += `<tr class="${rowClass}">
                     <td>${idx + 1}</td>
                     <td style="font-weight:600;">${item.name || ''}</td>
@@ -1791,8 +1962,8 @@
                 const invItem = inventory.find(inv => inv.name === item.name);
                 const typeBadge = invItem && invItem.type === 'flash' 
                     ? '<span class="badge-flash">⚡ فلاش</span>' 
-                    : (invItem && invItem.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>');
-                const rowClass = invItem && invItem.type === 'flash' ? 'row-flash' : (invItem && invItem.type === 'chemia' ? 'row-chemia' : '');
+                    : (invItem && invItem.type === 'krots' ? '<span class="badge-krots">🃏 كروت</span>' : (invItem && invItem.type === 'chemia' ? '<span class="badge-chemia">⚗️ كيميا</span>' : '<span style="color:#888; font-size:11px;">—</span>'));
+                const rowClass = invItem && invItem.type === 'flash' ? 'row-flash' : (invItem && invItem.type === 'krots' ? 'row-krots' : (invItem && invItem.type === 'chemia' ? 'row-chemia' : ''));
                 html += `<tr class="${rowClass}">
                     <td>${idx + 1}</td>
                     <td style="font-weight:600;">${item.name}</td>
